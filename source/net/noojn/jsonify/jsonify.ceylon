@@ -16,29 +16,9 @@ shared final annotation class JsonValueAnnotation()
 
 shared annotation JsonValueAnnotation jsonValue() => JsonValueAnnotation();
 
+"Map a ceylon instance to a JSON string."
 shared String jsonify(Anything root) {
 	switch (root)
-	//case (is String) {
-	//	return "\"``root``\"";
-	//}
-	//case (is Integer|Float) {
-	//	return root.string;
-	//}
-	//case (is Iterable<Anything>) {
-	//	if (is String root) {
-	//		return "\"``root``\"";
-	//	}
-	//	value arr = JSONArray();
-	//	for(e in root) {
-	//		arr.add(jsonifyValue(e));
-	//	}
-	//}
-	//else {
-	//	if (exists root) {
-	//		return jsonifyValue(root).string;
-	//	}
-	//	return "null";
-	//}
 	case (is String) {
 		return "\"``root``\"";
 	}
@@ -49,7 +29,7 @@ shared String jsonify(Anything root) {
 
 Value jsonifyValue(Anything root) {
 	switch (root)
-	case (is Integer|Float) {
+	case (is Integer|Float|Boolean) {
 		return root;
 	}
 	case (is Iterable<Anything>) {

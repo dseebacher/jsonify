@@ -36,6 +36,14 @@ shared class JsonifyTest() {
 	}
 	
 	test
+	shared void testJsonify_Boolean() {
+		value expected = "false";
+		value obj = false;
+		String? actual = jsonify(obj);
+		assertEquals(actual, expected);
+	}
+	
+	test
 	shared void testJsonify_String() {
 		value expected = "\"foo bar\"";
 		value obj = "foo bar";
