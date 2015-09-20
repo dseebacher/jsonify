@@ -2,13 +2,14 @@ import ceylon.json {
 	JSONObject=Object,
 	JSONArray=Array,
 	Value,
-	nil
+	ObjectValue
 }
 import ceylon.language.meta {
 	type
 }
 import ceylon.language.meta.declaration {
-	ValueDeclaration
+	ValueDeclaration,
+	ClassOrInterfaceDeclaration
 }
 
 shared final annotation class JsonValueAnnotation()
@@ -17,17 +18,21 @@ shared final annotation class JsonValueAnnotation()
 shared annotation JsonValueAnnotation jsonValue() => JsonValueAnnotation();
 
 "Map a ceylon instance to a JSON string."
-shared String jsonify(Anything root) {
+shared String jsonify(Anything root, Map<ClassOrInterfaceDeclaration,JsonProducer> producers = emptyMap) {
 	switch (root)
 	case (is String) {
 		return "\"``root``\"";
 	}
 	else {
-		return jsonifyValue(root).string;
+		value r = jsonifyValue(root, producers);
+		if (exists r) {
+			return r.string;
+		}
+		return "null";
 	}
 }
 
-Value jsonifyValue(Anything root) {
+Value jsonifyValue(Anything root, Map<ClassOrInterfaceDeclaration,JsonProducer> producers) {
 	switch (root)
 	case (is Integer|Float|Boolean) {
 		return root;
@@ -38,19 +43,34 @@ Value jsonifyValue(Anything root) {
 		}
 		value arr = JSONArray();
 		for (e in root) {
-			arr.add(jsonifyValue(e));
+			arr.add(jsonifyValue(e, producers));
 		}
 		return arr;
 	}
 	else {
 		if (exists root) {
 			value obj = JSONObject();
+
+			for (t in type(root).declaration.satisfiedTypes) {
+				if (exists producer = producers.get(t.declaration)) {
+					return producer.produce(root);
+				}
+			}
+			
 			value member = type(root).declaration.annotatedMemberDeclarations<ValueDeclaration,JsonValueAnnotation>();
 			for (v in member) {
-				obj.put(v.name, jsonifyValue(v.memberGet(root)));
+				obj.put(v.name, jsonifyValue(v.memberGet(root), producers));
 			}
 			return obj;
 		}
-		return nil;
+		return null;
 	}
+}
+
+shared interface JsonProducer {
+	shared formal ObjectValue produce(Object obj);
+}
+
+shared class StringProducer() satisfies JsonProducer {
+	shared actual ObjectValue produce(Object obj) => obj.string;
 }

@@ -5,7 +5,6 @@ import ceylon.language.meta {
 import ceylon.json {
 	JSONObject=Object,
 	parse,
-	NullInstance,
 	JSONArray=Array,
 	Value
 }
@@ -18,6 +17,7 @@ import ceylon.collection {
 	ArrayList
 }
 
+// TODO add consumers
 "Try to map a JSON string to a Ceylon type."
 shared T? ceylonify<T>(String json)
 		given T satisfies Object {
@@ -32,7 +32,7 @@ T? ceylonifyNode<T>(Value root)
 	case (is String&T|Integer&T|Float&T|Boolean&T) {
 		return root;
 	}
-	case (is NullInstance) {
+	case (is Null) {
 		return null;
 	}
 	case (is JSONArray) {
@@ -51,7 +51,7 @@ T? ceylonifyNode<T>(Value root)
 	}
 	case (is JSONObject) {
 		value t = typeLiteral<T>();
-		// TODO: handle special case if p is a container interface like map who are not json arrays/iterables
+		// TODO: handle special case if p is a container interface like map and not a json arrays/iterables
 		if (is Class<T> t) {
 			value c = t.declaration;
 			variable [Anything*] param = [];
