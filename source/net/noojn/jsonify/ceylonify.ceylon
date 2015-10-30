@@ -1,48 +1,55 @@
-import ceylon.language.meta {
-	typeLiteral,
-	type
+import ceylon.collection {
+	ArrayList
 }
 import ceylon.json {
 	JSONObject=Object,
 	parse,
 	JSONArray=Array,
-	Value
+	Value,
+	ObjectValue
+}
+import ceylon.language.meta {
+	typeLiteral,
+	type
+}
+import ceylon.language.meta.declaration {
+	ValueDeclaration,
+	ClassDeclaration,
+	InterfaceDeclaration
 }
 import ceylon.language.meta.model {
 	ClassOrInterface,
 	Type,
-	Class
-}
-import ceylon.collection {
-	ArrayList
+	Class,
+	CallableConstructor
 }
 
-// TODO add consumers
+shared interface JsonConsumer => Anything(ObjectValue);
+shared interface JsonConsumerMap => Map<ClassDeclaration|InterfaceDeclaration,JsonConsumer>;
+
 "Try to map a JSON string to a Ceylon type."
-shared T? ceylonify<T>(String json)
+shared T? ceylonify<T>(String json, JsonConsumerMap consumers = emptyMap)
 		given T satisfies Object {
-	value root = parse(json);
-	
-	return ceylonifyNode<T>(root);
+	return ceylonifyNode<T>(parse(json), consumers);
 }
 
-T? ceylonifyNode<T>(Value root)
+T? ceylonifyNode<T>(Value root, JsonConsumerMap consumers)
 		given T satisfies Object {
 	switch (root)
-	case (is String&T|Integer&T|Float&T|Boolean&T) {
-		return root;
-	}
 	case (is Null) {
 		return null;
+	}
+	case (is String&T|Integer&T|Float&T|Boolean&T) {
+		return root;
 	}
 	case (is JSONArray) {
 		assert (is ClassOrInterface<T> clazz = typeLiteral<T>());
 		assert (exists param = `interface Iterable`.typeParameterDeclarations[0]);
 		assert (exists nodeType = clazz.typeArguments[param], is ClassOrInterface<Anything> nodeType);
-		
+
 		value t2 = typeLiteral<Iterable<Anything,Null>>();
 		if (clazz.subtypeOf(t2)) {
-			value o = `function ceylonifyArray`.invoke([nodeType], root, nodeType);
+			value o = `function ceylonifyArray`.invoke([nodeType], root, nodeType, consumers);
 			// TODO: check if nonempty iterables required and cast..
 			assert (is T o);
 			return o;
@@ -53,29 +60,27 @@ T? ceylonifyNode<T>(Value root)
 		value t = typeLiteral<T>();
 		// TODO: handle special case if p is a container interface like map and not a json arrays/iterables
 		if (is Class<T> t) {
-			value c = t.declaration;
+			value clazz = t.declaration;
 			variable [Anything*] param = [];
-			for (i->p in c.parameterDeclarations.indexed) {
-				
-				if (exists v = root.get(p.name)) {
-					if (is JSONObject v) {
-						value pTypes = t.parameterTypes;
-						value pType = pTypes.get(i);
-						if (exists pType, is Type<Object> pType) {
-							value node = `function ceylonifyNode`.invoke([pType], v);
-							param = param.append([node]);
+			// TODO: clean up code...
+			if (exists declaration = clazz.parameterDeclarations) {
+				for (i->paramDeclaration in declaration.indexed) {
+					if (is ValueDeclaration paramDeclaration) {
+						if (exists jsonVal = root.get(paramDeclaration.name)) {
+							CallableConstructor<T,Nothing>? defaultConstructor = t.defaultConstructor;
+							if (exists defaultConstructor, exists paramType = defaultConstructor.parameterTypes.get(i)) {
+								param = param.append([compileParam(paramType, jsonVal, consumers)]);
+							}
+						} else {
+							if (!paramDeclaration.defaulted) {
+								throw Exception("No member '``paramDeclaration.name``' in JSON object!");
+							}
 						}
-					} else {
-						param = param.append([v]);
-					}
-				} else {
-					if (!p.defaulted) {
-						throw Exception("No member '``p.name``' in JSON object!");
 					}
 				}
 			}
-			
-			value o = c.instantiate([], *param);
+
+			value o = clazz.instantiate([], *param);
 			assert (is T o);
 			return o;
 		}
@@ -86,91 +91,24 @@ T? ceylonifyNode<T>(Value root)
 	}
 }
 
-Iterable<T> ceylonifyArray<T>(JSONArray root, ClassOrInterface<Anything> nodeType) {
+Iterable<T> ceylonifyArray<T>(JSONArray root, ClassOrInterface<Anything> nodeType, JsonConsumerMap consumers) {
 	value output = ArrayList<T>();
 	for (i in root) {
-		value oo = `function ceylonifyNode`.invoke([nodeType], i);
+		value oo = `function ceylonifyNode`.invoke([nodeType], i, consumers);
 		assert (is T oo);
 		output.add(oo);
 	}
 	return output;
 }
 
+Anything compileParam(Type<Anything> paramType, ObjectValue val, JsonConsumerMap consumers) {
+	if (is ClassOrInterface<Anything> paramType) {
+		for (satType in paramType.satisfiedTypes.prepend([paramType])) {
+			if (exists consumer = consumers.get(satType.declaration)) {
+				return consumer(val);
+			}
+		}
+	}
 
-//shared T? ceylonify<T>(String json)
-//		given T satisfies Object {
-//	value root = parse(json);
-//	
-//	value clazz = typeLiteral<T>();
-//	if (is ClassOrInterface<T> clazz) {
-//		value node = ceylonifyDo(root, clazz);
-//		if (is T? node) {
-//			return node;
-//		}
-//		throw Exception("E-1: expected type '``clazz``', but found '``type(node)``'");
-//	}
-//	throw Exception("Type ``clazz`` not a class or interface!"); //TODO: even possible!?
-//}
-//
-//// TODO: handle special case if p is a container interface like class or map
-//Anything ceylonifyDo(Value root, ClassOrInterface<Anything> clazz) {
-//	print("a new round with class ``clazz`` begins!");
-//	
-//	switch (root)
-//	case (is String|Integer|Float|Boolean) {
-//print("C1: found ``type(root)``");
-//		if (clazz.supertypeOf(type(root))) {
-//			return root;
-//		}
-//		throw Exception("E0: not a valid type ``type(root)``");
-//	}
-//	case (is NullInstance) {
-//		return null;
-//	}
-//	case (is JSONArray) {
-//print("C2: found ``type(root)``");
-//		value tmp = `interface Iterable`;
-//		value t2 = typeLiteral<Iterable<Anything,Null>>();
-//		assert (exists param = tmp.typeParameterDeclarations[0]);
-//		assert (exists nodeType = clazz.typeArguments[param], is ClassOrInterface<Anything> nodeType);
-//		if (clazz.subtypeOf(t2)) {
-//			return root.map<Anything>((Value element) => ceylonifyDo(element, nodeType));
-//			//value output = [];
-//			//for(i in root){
-//			//	assert(is nodeType o = ceylonifyDo(element, nodeType))
-//			//output.append();
-//			//}
-//		}
-//		throw Exception("JSON arrays can only be mapped to iterables!");
-//	}
-//	case (is JSONObject) {
-//		if (is Class<Anything> clazz) {
-//			variable [Anything*] param = [];
-//			for (i->p in clazz.declaration.parameterDeclarations.indexed) {
-//				if (exists v = root.get(p.name)) {
-//					if (is JSONObject v) {
-//						value pTypes = clazz.parameterTypes;
-//						value pType = pTypes.get(i);
-//						if (exists pType, is Class<Anything> pType) {
-//							value node = ceylonifyDo(v, pType);
-//							param = param.append([node]);
-//						} else {
-//							print("E1: nope :(");
-//						}
-//					} else {
-//						param = param.append([v]);
-//					}
-//				} else {
-//					throw Exception("No member '``p.name``' in JSON object!");
-//				}
-//			}
-//			
-//			value o = clazz.declaration.instantiate([], *param);
-//			return o;
-//		}
-//		throw Exception("Can not create a instance of the interface ``clazz``!");
-//	}
-//	else {
-//		throw Exception("expected type ``clazz.declaration.name`` not a ``type(root)``");
-//	}
-//}
+	return `function ceylonifyNode`.invoke([paramType], val, consumers);
+}

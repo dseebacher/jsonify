@@ -1,8 +1,8 @@
 import ceylon.json {
 	JSONObject=Object,
-	JSONArray=Array,
 	Value,
-	ObjectValue
+	ObjectValue,
+	JSONArray=Array
 }
 import ceylon.language.meta {
 	type
@@ -34,36 +34,25 @@ shared String jsonify(Anything root, Map<ClassOrInterfaceDeclaration,JsonProduce
 
 Value jsonifyValue(Anything root, Map<ClassOrInterfaceDeclaration,JsonProducer> producers) {
 	switch (root)
-	case (is Integer|Float|Boolean) {
+	case (is Null) {
+		return null;
+	}
+	case (is String|Integer|Float|Boolean) {
 		return root;
 	}
-	case (is Iterable<Anything>) {
-		if (is String root) {
-			return root;
-		}
-		value arr = JSONArray();
-		for (e in root) {
-			arr.add(jsonifyValue(e, producers));
-		}
-		return arr;
-	}
 	else {
-		if (exists root) {
-			value obj = JSONObject();
-
-			for (t in type(root).declaration.satisfiedTypes) {
-				if (exists producer = producers.get(t.declaration)) {
-					return producer.produce(root);
-				}
-			}
-			
-			value member = type(root).declaration.annotatedMemberDeclarations<ValueDeclaration,JsonValueAnnotation>();
-			for (v in member) {
-				obj.put(v.name, jsonifyValue(v.memberGet(root), producers));
-			}
-			return obj;
+		if (is {Anything*} root) {
+			return JSONArray(root.collect((Anything e) => jsonifyValue(e, producers)));
 		}
-		return null;
+
+		for (t in type(root).declaration.satisfiedTypes) {
+			if (exists producer = producers.get(t.declaration)) {
+				return producer.produce(root);
+			}
+		}
+
+		return JSONObject(type(root).declaration.annotatedMemberDeclarations<ValueDeclaration,JsonValueAnnotation>()
+				.collect((ValueDeclaration e) => e.name -> jsonifyValue(e.memberGet(root), producers)));
 	}
 }
 
