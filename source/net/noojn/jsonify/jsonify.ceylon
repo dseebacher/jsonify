@@ -12,30 +12,29 @@ import ceylon.language.meta.declaration {
 	ClassOrInterfaceDeclaration
 }
 
-shared final annotation class JsonValueAnnotation()
+shared interface JsonProducer => ObjectValue(Anything);
+shared interface JsonProducerMap => Map<ClassOrInterfaceDeclaration,JsonProducer>;
+
+shared final annotation class JsonValueAnnotation(shared String name)
 		satisfies OptionalAnnotation<JsonValueAnnotation,ValueDeclaration> {}
 
-shared annotation JsonValueAnnotation jsonValue() => JsonValueAnnotation();
+shared annotation JsonValueAnnotation jsonValue(String name = "") => JsonValueAnnotation(name);
 
 "Map a ceylon instance to a JSON string."
-shared String jsonify(Anything root, Map<ClassOrInterfaceDeclaration,JsonProducer> producers = emptyMap) {
+shared String jsonify(Anything root, JsonProducerMap producers = emptyMap) {
 	switch (root)
 	case (is String) {
 		return "\"``root``\"";
 	}
 	else {
-		value r = jsonifyValue(root, producers);
-		if (exists r) {
-			return r.string;
-		}
-		return "null";
+		return jsonifyValue(root, producers).string;
 	}
 }
 
-Value jsonifyValue(Anything root, Map<ClassOrInterfaceDeclaration,JsonProducer> producers) {
+ObjectValue jsonifyValue(Anything root, JsonProducerMap producers) {
 	switch (root)
 	case (is Null) {
-		return null;
+		return "null";
 	}
 	case (is String|Integer|Float|Boolean) {
 		return root;
@@ -47,7 +46,7 @@ Value jsonifyValue(Anything root, Map<ClassOrInterfaceDeclaration,JsonProducer> 
 
 		for (t in type(root).declaration.satisfiedTypes) {
 			if (exists producer = producers.get(t.declaration)) {
-				return producer.produce(root);
+				return producer(root);
 			}
 		}
 
@@ -56,10 +55,7 @@ Value jsonifyValue(Anything root, Map<ClassOrInterfaceDeclaration,JsonProducer> 
 	}
 }
 
-shared interface JsonProducer {
-	shared formal ObjectValue produce(Object obj);
-}
-
-shared class StringProducer() satisfies JsonProducer {
-	shared actual ObjectValue produce(Object obj) => obj.string;
+shared ObjectValue stringProducer(Anything obj) {
+	assert (is Object obj);
+	return obj.string;
 }

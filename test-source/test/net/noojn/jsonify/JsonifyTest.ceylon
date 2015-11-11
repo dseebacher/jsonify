@@ -1,6 +1,3 @@
-import ceylon.collection {
-	HashMap
-}
 import ceylon.json {
 	JSONObject=Object,
 	JSONArray=Array
@@ -16,9 +13,11 @@ import ceylon.time {
 import ceylon.time.timezone {
 	timeZone
 }
+
 import net.noojn.jsonify {
 	jsonify,
-	StringProducer
+	stringProducer,
+	jsonValue
 }
 
 shared class JsonifyTest() {
@@ -29,7 +28,7 @@ shared class JsonifyTest() {
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-	
+
 	test
 	shared void testJsonify_Integer() {
 		value expected = "123";
@@ -37,7 +36,7 @@ shared class JsonifyTest() {
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-	
+
 	test
 	shared void testJsonify_Float() {
 		value expected = "255.2112";
@@ -45,7 +44,7 @@ shared class JsonifyTest() {
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-	
+
 	test
 	shared void testJsonify_Boolean() {
 		value expected = "false";
@@ -53,7 +52,7 @@ shared class JsonifyTest() {
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-	
+
 	test
 	shared void testJsonify_String() {
 		value expected = "\"foo bar\"";
@@ -61,7 +60,7 @@ shared class JsonifyTest() {
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-	
+
 	test
 	shared void testJsonify_Object1() {
 		value expected = JSONObject({ "b"->"foo", "c"->"bar" }).string;
@@ -69,7 +68,7 @@ shared class JsonifyTest() {
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-	
+
 	test
 	shared void testJsonify_Nested() {
 		value expected = JSONObject({ "d"->2048, "e" -> JSONObject({ "b"->"baz", "c"->"woo" }) }).string;
@@ -77,7 +76,7 @@ shared class JsonifyTest() {
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-	
+
 	test
 	shared void testCelonify_Array() {
 		value expected = JSONArray({ 1, 2, 3 }).string;
@@ -85,7 +84,7 @@ shared class JsonifyTest() {
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-	
+
 	test
 	shared void testCelonify_NestedArray() {
 		value expected = JSONObject({ "float"->74.588, "values" -> JSONArray({ "das", "haus", "vom", "niko-laus" }) }).string;
@@ -93,12 +92,31 @@ shared class JsonifyTest() {
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-	
+
 	test
 	shared void testJsonify_StringProducer() {
 		value expected = "1970-01-01T00:00:00.000";
 		value obj = Instant(0).dateTime(timeZone.utc);
-		String? actual = jsonify(obj, HashMap { entries = { `DateTime`.declaration -> StringProducer() }; });
+		String? actual = jsonify(obj, map({`DateTime`.declaration->stringProducer}));
+		assertEquals(actual, expected);
+	}
+
+	//test
+	//shared void testJsonify_StringProducer2() {
+	//	value expected = "{\"date\": \"1970-01-01T00:00:00.000\"}";
+	//	value obj = Class10(Instant(0).dateTime(timeZone.utc));
+	//	String? actual = jsonify(obj);
+	//	assertEquals(actual, expected);
+	//}
+
+	test
+	shared void testJsonify_individualName() {
+		value expected = "{\"foo\": \"123\"}";
+		value obj = Class11("123");
+		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
 }
+
+//class Class10(jsonValue { producer = stringProducer; } DateTime date) {}
+class Class11(jsonValue("foo") shared String val) {}

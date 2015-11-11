@@ -3,10 +3,6 @@ import ceylon.json {
 	JSONArray=Array,
 	ObjectValue
 }
-import ceylon.language.meta.declaration {
-	ClassDeclaration,
-	InterfaceDeclaration
-}
 import ceylon.test {
 	assertEquals,
 	test
@@ -25,7 +21,7 @@ import ceylon.time.timezone {
 import net.noojn.jsonify {
 	ceylonify,
 	jsonValue,
-	JsonConsumer
+	JsonConsumerMap
 }
 
 shared class CeylonifyTest() {
@@ -108,7 +104,7 @@ shared class CeylonifyTest() {
 		}
 	}
 
-	void testEqualsConsumer<T>(T expected, String json, Map<ClassDeclaration|InterfaceDeclaration,JsonConsumer> consumers)
+	void testEqualsConsumer<T>(T expected, String json, JsonConsumerMap consumers)
 			given T satisfies Object {
 		value actual = ceylonify<T>(json, consumers);
 		assert (exists actual);

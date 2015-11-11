@@ -14,8 +14,7 @@ import ceylon.language.meta {
 }
 import ceylon.language.meta.declaration {
 	ValueDeclaration,
-	ClassDeclaration,
-	InterfaceDeclaration
+	ClassOrInterfaceDeclaration
 }
 import ceylon.language.meta.model {
 	ClassOrInterface,
@@ -25,16 +24,18 @@ import ceylon.language.meta.model {
 }
 
 shared interface JsonConsumer => Anything(ObjectValue);
-shared interface JsonConsumerMap => Map<ClassDeclaration|InterfaceDeclaration,JsonConsumer>;
+shared interface JsonConsumerMap => Map<ClassOrInterfaceDeclaration,JsonConsumer>;
 
 "Try to map a JSON string to a Ceylon type."
 shared T? ceylonify<T>(String json, JsonConsumerMap consumers = emptyMap)
 		given T satisfies Object {
+print("debug: ceylonify :``json``");
 	return ceylonifyNode<T>(parse(json), consumers);
 }
 
 T? ceylonifyNode<T>(Value root, JsonConsumerMap consumers)
 		given T satisfies Object {
+print("debug: expect type ``typeLiteral<T>()``");
 	switch (root)
 	case (is Null) {
 		return null;
@@ -43,21 +44,43 @@ T? ceylonifyNode<T>(Value root, JsonConsumerMap consumers)
 		return root;
 	}
 	case (is JSONArray) {
-		assert (is ClassOrInterface<T> clazz = typeLiteral<T>());
-		assert (exists param = `interface Iterable`.typeParameterDeclarations[0]);
-		assert (exists nodeType = clazz.typeArguments[param], is ClassOrInterface<Anything> nodeType);
+variable value c = typeLiteral<T>();
+print("debug: array ``root``");
+//	if(is IntersectionType<T> intersect = c ) {
+//		assert (intersect.satisfiedTypes.size == 2);
+//print("debug: intersect_0");
+//
+//		value cc = intersect.satisfiedTypes[0];
+//		assert (is ClassOrInterface<T> cc);
+//print("debug: intersect_1 ``cc``");
+//		c = cc;
+//print("debug: intersect_2");
+//	}
+//
+//		assert (is ClassOrInterface<T> clazz = c);
+		assert (is ClassOrInterface<T> clazz = c);
+print("debug: array_c_1 ");
+		//assert (exists param = `interface Iterable`.typeParameterDeclarations[0]);
+//print("debug: array_c_2");
+		assert (exists nodeType = clazz.typeArgumentList[0], is ClassOrInterface<Anything> nodeType);
+print("debug: array_c_3, nodetype: ``nodeType``");
 
 		value t2 = typeLiteral<Iterable<Anything,Null>>();
+print("debug: array2, type literal: ``clazz``");
 		if (clazz.subtypeOf(t2)) {
+print("debug: array3");
+//value o = ceylonifyArray(root, nodeType, consumers);
 			value o = `function ceylonifyArray`.invoke([nodeType], root, nodeType, consumers);
 			// TODO: check if nonempty iterables required and cast..
 			assert (is T o);
+print("debug: array4, result: ``o``");
 			return o;
 		}
 		throw Exception("JSON arrays can only be mapped to iterables!");
 	}
 	case (is JSONObject) {
 		value t = typeLiteral<T>();
+print("debug: object ``root``, expect ``t``");
 		// TODO: handle special case if p is a container interface like map and not a json arrays/iterables
 		if (is Class<T> t) {
 			value clazz = t.declaration;
@@ -92,6 +115,7 @@ T? ceylonifyNode<T>(Value root, JsonConsumerMap consumers)
 }
 
 Iterable<T> ceylonifyArray<T>(JSONArray root, ClassOrInterface<Anything> nodeType, JsonConsumerMap consumers) {
+print ("debug: ceyArr1");
 	value output = ArrayList<T>();
 	for (i in root) {
 		value oo = `function ceylonifyNode`.invoke([nodeType], i, consumers);
