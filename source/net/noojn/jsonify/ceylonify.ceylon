@@ -43,7 +43,8 @@ T? ceylonifyNode<T>(Value root, JsonConsumerMap consumers)
 	}
 	case (is JSONArray) {
 		assert (is ClassOrInterface<T> clazz = typeLiteral<T>());
-		assert (exists nodeType = clazz.typeArgumentList[0], is ClassOrInterface<Anything> nodeType);
+		assert (exists param = `interface Iterable`.typeParameterDeclarations[0]);
+		assert (exists nodeType = clazz.typeArguments[param], is ClassOrInterface<Anything> nodeType);
 
 		value t2 = typeLiteral<Iterable<Anything,Null>>();
 		if (clazz.subtypeOf(t2)) {
@@ -65,14 +66,20 @@ T? ceylonifyNode<T>(Value root, JsonConsumerMap consumers)
 			if (exists declaration = clazz.parameterDeclarations) {
 				for (i->paramDeclaration in declaration.indexed) {
 					if (is ValueDeclaration paramDeclaration) {
-						if (exists jsonVal = root.get(paramDeclaration.name)) {
+						String name
+								= if (exists annotation = paramDeclaration.annotations<JsonValueAnnotation>().first, annotation.name != "") then annotation.name else
+							paramDeclaration.name;
+
+						// get value
+						if (exists jsonVal = root.get(name)) {
 							CallableConstructor<T,Nothing>? defaultConstructor = t.defaultConstructor;
 							if (exists defaultConstructor, exists paramType = defaultConstructor.parameterTypes.get(i)) {
 								param = param.append([compileParam(paramType, jsonVal, consumers)]);
 							}
+							// got any default?
 						} else {
 							if (!paramDeclaration.defaulted) {
-								throw Exception("No member '``paramDeclaration.name``' in JSON object!");
+								throw Exception("No member '``name``' in JSON object!");
 							}
 						}
 					}
@@ -91,7 +98,6 @@ T? ceylonifyNode<T>(Value root, JsonConsumerMap consumers)
 }
 
 Iterable<T> ceylonifyArray<T>(JSONArray root, ClassOrInterface<Anything> nodeType, JsonConsumerMap consumers) {
-print ("debug: ceyArr1");
 	value output = ArrayList<T>();
 	for (i in root) {
 		value oo = `function ceylonifyNode`.invoke([nodeType], i, consumers);

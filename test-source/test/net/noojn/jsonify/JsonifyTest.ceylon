@@ -16,8 +16,7 @@ import ceylon.time.timezone {
 
 import net.noojn.jsonify {
 	jsonify,
-	stringProducer,
-	jsonValue
+	stringProducer
 }
 
 shared class JsonifyTest() {
@@ -64,7 +63,7 @@ shared class JsonifyTest() {
 	test
 	shared void testJsonify_Object1() {
 		value expected = JSONObject({ "b"->"foo", "c"->"bar" }).string;
-		value obj = Class1("foo", "bar");
+		value obj = TCSimpleClass("foo", "bar");
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
@@ -72,7 +71,7 @@ shared class JsonifyTest() {
 	test
 	shared void testJsonify_Nested() {
 		value expected = JSONObject({ "d"->2048, "e" -> JSONObject({ "b"->"baz", "c"->"woo" }) }).string;
-		value obj = Class2(2048, Class1("baz", "woo"));
+		value obj = TCClassAttribute(2048, TCSimpleClass("baz", "woo"));
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
@@ -88,7 +87,7 @@ shared class JsonifyTest() {
 	test
 	shared void testCelonify_NestedArray() {
 		value expected = JSONObject({ "float"->74.588, "values" -> JSONArray({ "das", "haus", "vom", "niko-laus" }) }).string;
-		value obj = Class3(74.588, { "das", "haus", "vom", "niko-laus" });
+		value obj = TCIterableAttribute(74.588, { "das", "haus", "vom", "niko-laus" });
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
@@ -102,83 +101,10 @@ shared class JsonifyTest() {
 	}
 
 	test
-	shared void testJsonify_individualName() {
+	shared void testJsonify_IndividualName() {
 		value expected = JSONObject({ "new_name"->"123" }).string;
-		value obj = Class4("123");
+		value obj = TCIndividualName("123");
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
-
-	//*************************************************************//
-
-	Boolean compareIterables(Anything a, Anything b) {
-		if (is Iterable<Anything> a, is Iterable<Anything> b) {
-			if (a.size != b.size) {
-				return false;
-			}
-			variable value va = a;
-			variable value vb = a;
-			while (exists aa = va.first, exists bb = vb.first) {
-				if (aa != bb) {
-					return false;
-				}
-				va = va.rest;
-				vb = vb.rest;
-			}
-			return true;
-		}
-		return false;
-	}
-
-	class Class1(
-		jsonValue
-		shared String b,
-		jsonValue
-		shared String c) {
-		shared actual Boolean equals(Object that) {
-			if (is Class1 that) {
-				return b==that.b &&
-						c==that.c;
-			} else {
-				return false;
-			}
-		}
-		shared actual String string => "Class1 [b '``b``', c '``c``']";
-	}
-
-	class Class2(
-		jsonValue
-		shared Integer d,
-		jsonValue
-		shared Class1 e) {
-		shared actual Boolean equals(Object that) {
-			if (is Class2 that) {
-				return d==that.d &&
-						e==that.e;
-			} else {
-				return false;
-			}
-		}
-		shared actual String string => "Class2 [d '``d``', e '``e``']";
-	}
-
-	class Class3(
-		jsonValue
-		shared Float float,
-		jsonValue
-		shared {String*} values) {
-		shared actual Boolean equals(Object that) {
-			if (is Class3 that) {
-				return float==that.float &&
-						compareIterables(values, that.values);
-			} else {
-				return false;
-			}
-		}
-		shared actual String string => "Class3 [float: '``float``', values: '``values``']";
-	}
-
-	class Class4(
-		jsonValue ("new_name")
-		shared String name) {}
 }
