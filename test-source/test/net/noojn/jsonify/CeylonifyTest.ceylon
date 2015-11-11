@@ -88,9 +88,12 @@ shared class CeylonifyTest() {
 	test
 	shared void testCelonify_Interface() {
 		value expected = Class4(0.002, Instant(0).dateTime(timeZone.utc));
-		value jo = JSONObject({ "float"->0.002, "date" -> "1970-01-01T00:00:00.000" });
-		testEqualsConsumer<Class4>(expected, jo.string, map({`DateTime`.declaration
-			->((ObjectValue date){assert(is String date);return parseDateTime(date);})}));
+		value jo = JSONObject({ "float"->0.002, "date"->"1970-01-01T00:00:00.000" });
+		testEqualsConsumer<Class4>(expected, jo.string, map({ `DateTime`.declaration
+							-> ((ObjectValue date) {
+							assert (is String date);
+							return parseDateTime(date);
+						}) }));
 	}
 
 	void testEquals<T>(T expected, String json)
@@ -114,87 +117,89 @@ shared class CeylonifyTest() {
 			assertEquals(actual, expected);
 		}
 	}
-}
 
-Boolean compareIterables(Anything a, Anything b) {
-	if (is Iterable<Anything> a, is Iterable<Anything> b) {
-		if (a.size != b.size) {
-			return false;
-		}
-		variable value va = a;
-		variable value vb = a;
-		while (exists aa = va.first, exists bb = vb.first) {
-			if (aa != bb) {
+	//*************************************************************//
+
+	Boolean compareIterables(Anything a, Anything b) {
+		if (is Iterable<Anything> a, is Iterable<Anything> b) {
+			if (a.size != b.size) {
 				return false;
 			}
-			va = va.rest;
-			vb = vb.rest;
+			variable value va = a;
+			variable value vb = a;
+			while (exists aa = va.first, exists bb = vb.first) {
+				if (aa != bb) {
+					return false;
+				}
+				va = va.rest;
+				vb = vb.rest;
+			}
+			return true;
 		}
-		return true;
+		return false;
 	}
-	return false;
-}
 
-class Class1(
-	jsonValue
-	shared String b,
-	jsonValue
-	shared String c) {
-	shared actual Boolean equals(Object that) {
-		if (is Class1 that) {
-			return b==that.b &&
-					c==that.c;
-		} else {
-			return false;
+	class Class1(
+		jsonValue
+		shared String b,
+		jsonValue
+		shared String c) {
+		shared actual Boolean equals(Object that) {
+			if (is Class1 that) {
+				return b==that.b &&
+						c==that.c;
+			} else {
+				return false;
+			}
 		}
+		shared actual String string => "Class1 [b '``b``', c '``c``']";
 	}
-	shared actual String string => "Class1 [b '``b``', c '``c``']";
-}
 
-class Class2(
-	jsonValue
-	shared Integer d,
-	jsonValue
-	shared Class1 e) {
-	shared actual Boolean equals(Object that) {
-		if (is Class2 that) {
-			return d==that.d &&
-					e==that.e;
-		} else {
-			return false;
+	class Class2(
+		jsonValue
+		shared Integer d,
+		jsonValue
+		shared Class1 e) {
+		shared actual Boolean equals(Object that) {
+			if (is Class2 that) {
+				return d==that.d &&
+						e==that.e;
+			} else {
+				return false;
+			}
 		}
+		shared actual String string => "Class2 [d '``d``', e '``e``']";
 	}
-	shared actual String string => "Class2 [d '``d``', e '``e``']";
-}
 
-class Class3(
-	jsonValue
-	shared Float float,
-	jsonValue
-	shared {String*} values) {
-	shared actual Boolean equals(Object that) {
-		if (is Class3 that) {
-			return float==that.float &&
-					compareIterables(values, that.values);
-		} else {
-			return false;
+	class Class3(
+		jsonValue
+		shared Float float,
+		jsonValue
+		shared {String*} values) {
+		shared actual Boolean equals(Object that) {
+			if (is Class3 that) {
+				return float==that.float &&
+						compareIterables(values, that.values);
+			} else {
+				return false;
+			}
 		}
+		shared actual String string => "Class3 [float: '``float``', values: '``values``']";
 	}
-	shared actual String string => "Class3 [float: '``float``', values: '``values``']";
-}
 
-class Class4(
-	jsonValue
-	shared Float float,
-	jsonValue
-	shared DateTime date) {
-	shared actual Boolean equals(Object that) {
-		if (is Class4 that) {
-			return float==that.float &&
-					date==that.date;
-		} else {
-			return false;
+	class Class4(
+		jsonValue
+		shared Float float,
+		jsonValue
+		shared DateTime date) {
+		shared actual Boolean equals(Object that) {
+			if (is Class4 that) {
+				return float==that.float &&
+						date==that.date;
+			} else {
+				return false;
+			}
 		}
+		shared actual String string => "Class4 [float: '``float``', date: '``date``']";
 	}
-	shared actual String string => "Class4 [float: '``float``', date: '``date``']";
 }

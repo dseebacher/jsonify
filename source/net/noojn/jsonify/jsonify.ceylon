@@ -11,13 +11,12 @@ import ceylon.language.meta.declaration {
 	ClassOrInterfaceDeclaration
 }
 
+import net.noojn.jsonify {
+	JsonValueAnnotation
+}
+
 shared interface JsonProducer => ObjectValue(Anything);
 shared interface JsonProducerMap => Map<ClassOrInterfaceDeclaration,JsonProducer>;
-
-shared final annotation class JsonValueAnnotation(shared String name)
-		satisfies OptionalAnnotation<JsonValueAnnotation,ValueDeclaration> {}
-
-shared annotation JsonValueAnnotation jsonValue(String name = "") => JsonValueAnnotation(name);
 
 "Map a ceylon instance to a JSON string."
 shared String jsonify(Anything root, JsonProducerMap producers = emptyMap) {
