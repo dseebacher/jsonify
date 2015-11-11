@@ -48,8 +48,8 @@ ObjectValue jsonifyValue(Anything root, JsonProducerMap producers) {
 			}
 		}
 
-		return JSONObject(type(root).declaration.annotatedMemberDeclarations<ValueDeclaration,JsonValueAnnotation>()
-				.collect((ValueDeclaration e) {
+		return JSONObject(type(root).declaration.memberDeclarations<ValueDeclaration>()
+				.filter((ValueDeclaration e) => e.parameter).collect((ValueDeclaration e) {
 					return (if (exists annotation = e.annotations<JsonValueAnnotation>().first, annotation.name != "") then annotation.name else e.name) -> jsonifyValue(e.memberGet(root), producers); }));
 	}
 }

@@ -26,9 +26,7 @@ Boolean compareIterables(Anything a, Anything b) {
 }
 
 class TCSimpleClass(
-	jsonValue
 	shared String b,
-	jsonValue
 	shared String c) {
 	shared actual Boolean equals(Object that) {
 		if (is TCSimpleClass that) {
@@ -44,7 +42,6 @@ class TCSimpleClass(
 class TCClassAttribute(
 	jsonValue
 	shared Integer d,
-	jsonValue
 	shared TCSimpleClass e) {
 	shared actual Boolean equals(Object that) {
 		if (is TCClassAttribute that) {
@@ -58,9 +55,7 @@ class TCClassAttribute(
 }
 
 class TCIterableAttribute(
-	jsonValue
 	shared Float float,
-	jsonValue
 	shared {String*} values) {
 	shared actual Boolean equals(Object that) {
 		if (is TCIterableAttribute that) {
@@ -74,7 +69,6 @@ class TCIterableAttribute(
 }
 
 class TCDateTimeAttribute(
-	jsonValue
 	shared Float float,
 	jsonValue
 	shared DateTime date) {
