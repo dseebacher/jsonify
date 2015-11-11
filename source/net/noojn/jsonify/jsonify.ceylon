@@ -15,7 +15,7 @@ import net.noojn.jsonify {
 	JsonValueAnnotation
 }
 
-shared interface JsonProducer => ObjectValue(Anything);
+shared interface JsonProducer => ObjectValue(Anything, ObjectValue(Anything));
 shared interface JsonProducerMap => Map<ClassOrInterfaceDeclaration,JsonProducer>;
 
 "Map a ceylon instance to a JSON string."
@@ -29,7 +29,10 @@ shared String jsonify(Anything root, JsonProducerMap producers = emptyMap) {
 	}
 }
 
+ObjectValue jsonify2(JsonProducerMap producers)(Anything root) =>jsonifyValue(root, producers);
+
 ObjectValue jsonifyValue(Anything root, JsonProducerMap producers) {
+
 	switch (root)
 	case (is Null) {
 		return "null";
@@ -38,14 +41,14 @@ ObjectValue jsonifyValue(Anything root, JsonProducerMap producers) {
 		return root;
 	}
 	else {
-		if (is {Anything*} root) {
-			return JSONArray(root.collect((Anything e) => jsonifyValue(e, producers)));
-		}
-
 		for (t in type(root).declaration.satisfiedTypes) {
 			if (exists producer = producers.get(t.declaration)) {
-				return producer(root);
+				return producer(root, jsonify2(producers));
 			}
+		}
+
+		if (is {Anything*} root) {
+			return JSONArray(root.collect((Anything e) => jsonifyValue(e, producers)));
 		}
 
 		return JSONObject(type(root).declaration.memberDeclarations<ValueDeclaration>()
@@ -54,7 +57,12 @@ ObjectValue jsonifyValue(Anything root, JsonProducerMap producers) {
 	}
 }
 
-shared ObjectValue stringProducer(Anything obj) {
+shared ObjectValue stringProducer(Anything obj, ObjectValue(Anything) jsonify2) {
 	assert (is Object obj);
 	return obj.string;
+}
+
+shared ObjectValue mapProducer(Anything obj, ObjectValue(Anything) jsonify2) {
+	assert (is Map<Object> obj);
+	return JSONObject(obj.collect((Object->Anything e) => jsonify2(e.key).string->jsonify2(e.item)));
 }

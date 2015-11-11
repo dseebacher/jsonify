@@ -102,9 +102,11 @@ shared class CeylonifyTest() {
 		testEquals<TCIndividualName>(expected, jo.string);
 	}
 
+	//test shared void testCeylonify
+
 	//*************************************************************//
 
-	void testEquals<T>(T expected, String json, JsonConsumerMap consumers =emptyMap)
+	void testEquals<T>(T expected, String json, JsonConsumerMap consumers = emptyMap)
 			given T satisfies Object {
 		value actual = ceylonify<T>(json, consumers);
 		assert (exists actual);

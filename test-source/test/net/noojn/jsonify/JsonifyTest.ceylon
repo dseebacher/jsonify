@@ -16,7 +16,8 @@ import ceylon.time.timezone {
 
 import net.noojn.jsonify {
 	jsonify,
-	stringProducer
+	stringProducer,
+	mapProducer
 }
 
 shared class JsonifyTest() {
@@ -105,6 +106,22 @@ shared class JsonifyTest() {
 		value expected = JSONObject({ "new_name"->"123" }).string;
 		value obj = TCIndividualName("123");
 		String? actual = jsonify(obj);
+		assertEquals(actual, expected);
+	}
+
+	test
+	shared void testJsonify_Map() {
+		value expected = JSONObject({ "k1"->1, "k2"->2 }).string;
+		Map<String,Integer> obj = map({ "k1"->1, "k2"->2 });
+		String? actual = jsonify(obj, map({ `Map<Object>`.declaration->mapProducer }));
+		assertEquals(actual, expected);
+	}
+
+	test
+	shared void testJsonify_MapMixed() {
+		value expected = JSONObject({ "k1"->"foo", "k2"->JSONObject({ "b"->"baz", "c"->"woo" }) }).string;
+		Map<String,String|TCSimpleClass> obj = map({ "k1"->"foo", "k2"->TCSimpleClass("baz", "woo") });
+		String? actual = jsonify(obj, map({ `Map<Object>`.declaration->mapProducer }));
 		assertEquals(actual, expected);
 	}
 }
