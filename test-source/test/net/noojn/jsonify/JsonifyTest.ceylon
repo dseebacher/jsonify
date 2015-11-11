@@ -97,26 +97,19 @@ shared class JsonifyTest() {
 	shared void testJsonify_StringProducer() {
 		value expected = "1970-01-01T00:00:00.000";
 		value obj = Instant(0).dateTime(timeZone.utc);
-		String? actual = jsonify(obj, map({`DateTime`.declaration->stringProducer}));
+		String? actual = jsonify(obj, map({ `DateTime`.declaration->stringProducer }));
 		assertEquals(actual, expected);
 	}
 
-	//test
-	//shared void testJsonify_StringProducer2() {
-	//	value expected = "{\"date\": \"1970-01-01T00:00:00.000\"}";
-	//	value obj = Class10(Instant(0).dateTime(timeZone.utc));
-	//	String? actual = jsonify(obj);
-	//	assertEquals(actual, expected);
-	//}
-
 	test
 	shared void testJsonify_individualName() {
-		value expected = "{\"foo\": \"123\"}";
+		value expected = JSONObject({ "new_name"->"123" }).string;
 		value obj = Class11("123");
 		String? actual = jsonify(obj);
 		assertEquals(actual, expected);
 	}
 }
 
-//class Class10(jsonValue { producer = stringProducer; } DateTime date) {}
-class Class11(jsonValue("foo") shared String val) {}
+class Class11(
+	jsonValue ("new_name")
+	shared String name) {}
