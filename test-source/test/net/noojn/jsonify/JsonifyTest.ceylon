@@ -119,8 +119,8 @@ shared class JsonifyTest() {
 
 	test
 	shared void testJsonify_MapMixed() {
-		value expected = JSONObject({ "k1"->"foo", "k2"->JSONObject({ "b"->"baz", "c"->"woo" }) }).string;
-		Map<String,String|TCSimpleClass> obj = map({ "k1"->"foo", "k2"->TCSimpleClass("baz", "woo") });
+		value expected = JSONObject({ "k1"->"foo", "k2" -> JSONObject({ "b"->"baz", "c"->"woo" }) }).string;
+		Map<String,String|TCSimpleClass> obj = map({ "k1"->"foo", "k2" -> TCSimpleClass("baz", "woo") });
 		String? actual = jsonify(obj, map({ `Map<Object>`.declaration->mapProducer }));
 		assertEquals(actual, expected);
 	}

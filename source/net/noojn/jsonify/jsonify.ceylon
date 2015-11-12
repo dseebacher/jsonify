@@ -29,8 +29,6 @@ shared String jsonify(Anything root, JsonProducerMap producers = emptyMap) {
 	}
 }
 
-ObjectValue jsonify2(JsonProducerMap producers)(Anything root) =>jsonifyValue(root, producers);
-
 ObjectValue jsonifyValue(Anything root, JsonProducerMap producers) {
 
 	switch (root)
@@ -43,7 +41,7 @@ ObjectValue jsonifyValue(Anything root, JsonProducerMap producers) {
 	else {
 		for (t in type(root).declaration.satisfiedTypes) {
 			if (exists producer = producers.get(t.declaration)) {
-				return producer(root, jsonify2(producers));
+				return producer(root, (Anything root) => jsonifyValue(root, producers));
 			}
 		}
 
@@ -57,12 +55,12 @@ ObjectValue jsonifyValue(Anything root, JsonProducerMap producers) {
 	}
 }
 
-shared ObjectValue stringProducer(Anything obj, ObjectValue(Anything) jsonify2) {
+shared ObjectValue stringProducer(Anything obj, ObjectValue(Anything) j) {
 	assert (is Object obj);
 	return obj.string;
 }
 
-shared ObjectValue mapProducer(Anything obj, ObjectValue(Anything) jsonify2) {
+shared ObjectValue mapProducer(Anything obj, ObjectValue(Anything) j) {
 	assert (is Map<Object> obj);
-	return JSONObject(obj.collect((Object->Anything e) => jsonify2(e.key).string->jsonify2(e.item)));
+	return JSONObject(obj.collect((Object->Anything e) => j(e.key).string -> j(e.item)));
 }

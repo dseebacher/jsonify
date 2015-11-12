@@ -1,7 +1,11 @@
 import ceylon.json {
 	JSONObject=Object,
 	JSONArray=Array,
-	ObjectValue
+	ObjectValue,
+	Value
+}
+import ceylon.language.meta.model {
+	Type
 }
 import ceylon.test {
 	assertEquals,
@@ -20,7 +24,8 @@ import ceylon.time.timezone {
 
 import net.noojn.jsonify {
 	ceylonify,
-	JsonConsumerMap
+	JsonConsumerMap,
+	mapConsumer
 }
 
 shared class CeylonifyTest() {
@@ -89,7 +94,7 @@ shared class CeylonifyTest() {
 		value expected = TCDateTimeAttribute(0.002, Instant(0).dateTime(timeZone.utc));
 		value jo = JSONObject({ "float"->0.002, "date"->"1970-01-01T00:00:00.000" });
 		testEquals<TCDateTimeAttribute>(expected, jo.string, map({ `DateTime`.declaration
-							-> ((ObjectValue date) {
+							-> ((ObjectValue date, Anything(Value, Type<Anything>) c) {
 							assert (is String date);
 							return parseDateTime(date);
 						}) }));
@@ -98,11 +103,16 @@ shared class CeylonifyTest() {
 	test
 	shared void testCelonify_IndividualName() {
 		value expected = TCIndividualName("123");
-		value jo = JSONObject({ "new_name" -> "123" });
+		value jo = JSONObject({ "new_name"->"123" });
 		testEquals<TCIndividualName>(expected, jo.string);
 	}
 
-	//test shared void testCeylonify
+	test
+	shared void testCelonify_Map() {
+		value expected = map({ "k1"->1, "k2"->2 });
+		value jo = JSONObject({ "k1"->1, "k2"->2 });
+		testEquals<Map<String,Integer?>>(expected, jo.string, map({ `Map<String,Integer?>`.declaration->mapConsumer<Integer> }));
+	}
 
 	//*************************************************************//
 

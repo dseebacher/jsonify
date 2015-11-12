@@ -23,7 +23,7 @@ import ceylon.language.meta.model {
 	CallableConstructor
 }
 
-shared interface JsonConsumer => Anything(ObjectValue);
+shared interface JsonConsumer => Anything(ObjectValue, Anything(Value, Type<Anything>));
 shared interface JsonConsumerMap => Map<ClassOrInterfaceDeclaration,JsonConsumer>;
 
 "Try to map a JSON string to a Ceylon type."
@@ -58,7 +58,20 @@ T? ceylonifyNode<T>(Value root, JsonConsumerMap consumers)
 	}
 	case (is JSONObject) {
 		value t = typeLiteral<T>();
-		// TODO: handle special case if p is a container interface like map and not a json arrays/iterables
+
+		if (is ClassOrInterface<Anything> t) {
+			for (satType in t.satisfiedTypes.prepend([t])) {
+				if (exists consumer = consumers.get(satType.declaration)) {
+					if (is Callable<T,[ObjectValue, Anything(Value, Type<Anything>)]> consumer) {
+						return consumer(root, (Value v, Type<Anything> tt) => `function ceylonifyNode`.invoke([tt], v, consumers));
+					} else {
+						throw Exception("*** wrong consumer expect '``t``(Value)' but got '``consumer``'");
+					}
+				}
+			}
+		}
+
+		// TODO: allow union type (e.g mixed map)
 		if (is Class<T> t) {
 			value clazz = t.declaration;
 			variable [Anything*] param = [];
@@ -111,10 +124,18 @@ Anything compileParam(Type<Anything> paramType, ObjectValue val, JsonConsumerMap
 	if (is ClassOrInterface<Anything> paramType) {
 		for (satType in paramType.satisfiedTypes.prepend([paramType])) {
 			if (exists consumer = consumers.get(satType.declaration)) {
-				return consumer(val);
+				return consumer(val, (Value v, Type<Anything> t) => `function ceylonifyNode`.invoke([t], v, consumers));
 			}
 		}
 	}
 
 	return `function ceylonifyNode`.invoke([paramType], val, consumers);
+}
+
+shared Map<String,V?> mapConsumer<V>(ObjectValue obj, Anything(Value, Type<Anything>) c) given V satisfies Object {
+	assert (is JSONObject obj);
+	return map(obj.collect((String->Value element) {
+				value r = c(element.item, typeLiteral<V>());
+				return element.key -> (if (is V r) then r else null);
+			}));
 }
